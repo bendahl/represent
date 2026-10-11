@@ -1,0 +1,10 @@
+# ignore IntelliJ/Goland files
+.idea/
+*.iml
+
+# ignore generated slides
+slides/
+.html
+
+# ignore generated binary
+represent
