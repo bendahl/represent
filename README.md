@@ -27,11 +27,12 @@ Besides this, here are some things to note:
 * Tables are supported
 * Code blocks are supported (including syntax highlighting)
 * Light and dark mode are supported (see [slide generation](#slide-generation) for details)
+* Assets, like images, should be copied to a separate folder in the working directory. The folder needs to be called `assets`.
 * Presenter notes are supported
   * Use `:start-notes` and `:end-notes` markers to mark a block of presenter notes
   * Presenter notes can make use of the same formatting as any regular slide
 
-For more details see the `test.md` file in this repository. It contains examples for the above-mentioned features and is used for basic testing.
+For more details see the `example/example.md` file in this repository. It contains examples for the above-mentioned features and is used for basic testing.
 
 ### Slide Generation
 To generate the slides, simply use the follwing command:
