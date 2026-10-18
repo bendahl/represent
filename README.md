@@ -35,7 +35,7 @@ Besides this, here are some things to note:
 For more details see the `example/example.md` file in this repository. It contains examples for the above-mentioned features and is used for basic testing.
 
 ### Slide Generation
-To generate the slides, simply use the follwing command:
+To generate the slides, simply use the following command:
 
 > ./represent render -in ./example/example.md -out example/slides
 
