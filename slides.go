@@ -94,8 +94,8 @@ func renderHTML(mergedLines string) string {
 func split(md io.Reader) ([]Slide, error) {
 	h1 := regexp.MustCompile("^[\\s]*#\\s.*$")
 	h2 := regexp.MustCompile("^[\\s]*##\\s.*$")
-	startNotes := regexp.MustCompile("^:start-notes")
-	endNotes := regexp.MustCompile("^:end-notes")
+	startNotes := regexp.MustCompile("^:notes-start")
+	endNotes := regexp.MustCompile("^:notes-end")
 	mdScanner := bufio.NewScanner(md)
 	inNotesSection := false
 	// ignore leading blank lines

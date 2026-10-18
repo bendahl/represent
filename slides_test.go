@@ -10,11 +10,11 @@ const mdFile = `
 # This is a Test Front Page
 This is a subtitle
 
-:start-notes
+:notes-start
 - These are presenter notes
 - Another note
 	- Some sub list
-:end-notes
+:notes-end
 
 ## First Regular slide
 Some Test
@@ -26,9 +26,9 @@ func main() {
 	return
 }
 ~~~
-:start-notes
+:notes-start
 Some note
-:end-notes
+:notes-end
  ## Header with Space in Front should work as well...
 `
 
@@ -74,19 +74,19 @@ const multiPrentationMd = `
 # This is a Test Front Page
 This is a subtitle
 
-:start-notes
+:notes-start
 - These are presenter notes
 - Another note
 	- Some sub list
-:end-notes
+:notes-end
 
 ## First Regular slide
 Some Test
 # Another Presentation starts...
 Another Subtitle
-:start-notes
+:notes-start
 Some note
-:end-notes
+:notes-end
  ## Header with Space in Front should work as well...
 `
 
