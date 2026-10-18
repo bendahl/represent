@@ -5,6 +5,9 @@ import (
 	"os"
 )
 
+var version string
+var commit string
+
 var commands = map[string]string{
 	"render":  "Render HTML slides from Markdown",
 	"present": "Run presentation web server",
@@ -40,7 +43,7 @@ func main() {
 
 		panic("ERROR: Not implemented")
 	case "version":
-		//printVersion()
+		printVersion()
 	default:
 		panic("ERROR: Not implemented - This should be unreachable")
 	}
@@ -58,4 +61,11 @@ func usage() {
 	for c, description := range commands {
 		fmt.Printf("	%s - %s\n", c, description)
 	}
+}
+
+func printVersion() {
+	if version == commit {
+		version = "dev"
+	}
+	fmt.Printf("Version: %s\nCommit Hash: %s\n\n", version, commit)
 }
