@@ -1,7 +1,9 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -35,17 +37,29 @@ func main() {
 
 	switch command {
 	case "render":
-		panic("ERROR: Not implemented")
+		handleRenderCmd(args[1:])
 	case "present":
-
-		panic("ERROR: Not implemented")
-	case "list":
-
 		panic("ERROR: Not implemented")
 	case "version":
 		printVersion()
 	default:
 		panic("ERROR: Not implemented - This should be unreachable")
+	}
+}
+
+func handleRenderCmd(args []string) {
+	fl := flag.NewFlagSet("render", flag.ExitOnError)
+	var outDir string
+	fl.StringVar(&outDir, "out", "slides", "output directory name")
+	var inputMd string
+	fl.StringVar(&inputMd, "in", "slides.md", "input markdown filename")
+	err := fl.Parse(args)
+	if err != nil {
+		log.Fatalln("Failed to process program arguments.")
+	}
+	err = generateSlides(outDir, inputMd)
+	if err != nil {
+		log.Fatalf("Failed to generate slides: %v\n", err)
 	}
 }
 

@@ -38,6 +38,10 @@ func main() {
 * Can be compiled to **fully self-contained** binary
 :notes-end
 
+## Picture Example
+
+![logo](./assets/tnt_logo.png)
+
 ## Conclusion
 
 Thanks for watching!

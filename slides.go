@@ -4,7 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/gomarkdown/markdown"
@@ -27,6 +30,50 @@ func (s Slide) ContentAsMD() string {
 func (s Slide) NotesAsMD() string {
 	mergedLines := strings.Join(s.Notes, "\n")
 	return renderHTML(mergedLines)
+}
+
+func generateSlides(outDir string, inputMd string) error {
+	err := os.MkdirAll(outDir, 0755)
+	if err != nil {
+		return err
+	}
+	inFile, err := os.Open(inputMd)
+	if err != nil {
+		return err
+	}
+	defer inFile.Close()
+	slides, err := split(io.Reader(inFile))
+	if err != nil {
+		return err
+	}
+	for idx, slide := range slides {
+		slideNum := idx + 1
+		outFile := filepath.Join(outDir, "content-"+strconv.Itoa(slideNum)+".html")
+		err := os.WriteFile(outFile, []byte(slide.ContentAsMD()), 0755)
+		if err != nil {
+			return err
+		}
+		outFile = filepath.Join(outDir, "notes-"+strconv.Itoa(slideNum)+".html")
+		err = os.WriteFile(outFile, []byte(slide.NotesAsMD()), 0755)
+		if err != nil {
+			return err
+		}
+	}
+	srcDir := filepath.Join(filepath.Dir(inputMd), "assets")
+	targetDir := filepath.Join(outDir, "assets")
+	err = copyAssets(srcDir, targetDir)
+	if err != nil {
+		return fmt.Errorf("failed to copy assets: %v", err)
+	}
+	return nil
+}
+
+func copyAssets(srcDir string, targetDir string) error {
+	err := os.MkdirAll(targetDir, 0755)
+	if err != nil {
+		return err
+	}
+	return os.CopyFS(targetDir, os.DirFS(srcDir))
 }
 
 func renderHTML(mergedLines string) string {
