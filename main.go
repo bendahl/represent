@@ -55,7 +55,7 @@ func isValidCommand(cmd string) bool {
 }
 
 func usage() {
-	fmt.Println("Usage: tnt <command> <args>")
+	fmt.Println("Usage: represent <command> <args>")
 	fmt.Println()
 	fmt.Println("Available commands:")
 	for c, description := range commands {
