@@ -29,7 +29,7 @@ Besides this, here are some things to note:
 * Light and dark mode are supported (see [slide generation](#slide-generation) for details)
 * Assets, like images, should be copied to a separate folder in the working directory. The folder needs to be called `assets`.
 * Presenter notes are supported
-  * Use `:start-notes` and `:end-notes` markers to mark a block of presenter notes
+  * Use `:notes-start` and `:notes-end` markers to mark a block of presenter notes
   * Presenter notes can make use of the same formatting as any regular slide
 
 For more details see the `example/example.md` file in this repository. It contains examples for the above-mentioned features and is used for basic testing.
@@ -37,7 +37,7 @@ For more details see the `example/example.md` file in this repository. It contai
 ### Slide Generation
 To generate the slides, simply use the follwing command:
 
-> represent -theme [light|dark] -out [slide-folder] markdown.md
+> ./represent render -in ./example/example.md -out example/slides
 
 **Note that -theme and -out are optional parameters. Dark is used as the default theme. If no output directory name 
 is chosen, `slides/` will be assumed as the target directory. The directory will be created if it does not exist.**

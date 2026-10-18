@@ -58,13 +58,13 @@ func TestRender(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unexpected error during split operation: %v", err)
 	}
-	actualNotes := slides[0].NotesAsMD()
+	actualNotes := slides[0].NotesAsHtml()
 	if actualNotes != expectedNotes {
 		t.Fatalf("Notes format does not match expected format.")
 	}
 
 	expectedContent := "<p>This is a subtitle</p>\n"
-	actualContent := slides[0].ContentAsMD()
+	actualContent := slides[0].ContentAsHtml()
 	if actualContent != expectedContent {
 		t.Fatalf("Content format does not match expected format.")
 	}

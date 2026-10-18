@@ -2,6 +2,8 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"embed"
 	"fmt"
 	"io"
 	"os"
@@ -9,11 +11,15 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"text/template"
 
 	"github.com/gomarkdown/markdown"
 	mdhtml "github.com/gomarkdown/markdown/html"
 	"github.com/gomarkdown/markdown/parser"
 )
+
+//go:embed static/*
+var templateFs embed.FS
 
 type Slide struct {
 	IsFrontPage bool
@@ -22,12 +28,12 @@ type Slide struct {
 	Notes       []string
 }
 
-func (s Slide) ContentAsMD() string {
+func (s Slide) ContentAsHtml() string {
 	mergedLines := strings.Join(s.Content, "\n")
 	return renderHTML(mergedLines)
 }
 
-func (s Slide) NotesAsMD() string {
+func (s Slide) NotesAsHtml() string {
 	mergedLines := strings.Join(s.Notes, "\n")
 	return renderHTML(mergedLines)
 }
@@ -49,12 +55,20 @@ func generateSlides(outDir string, inputMd string) error {
 	for idx, slide := range slides {
 		slideNum := idx + 1
 		outFile := filepath.Join(outDir, "content-"+strconv.Itoa(slideNum)+".html")
-		err := os.WriteFile(outFile, []byte(slide.ContentAsMD()), 0755)
+		renderedSlide, err := renderSlide(slide, false)
 		if err != nil {
 			return err
 		}
-		outFile = filepath.Join(outDir, "notes-"+strconv.Itoa(slideNum)+".html")
-		err = os.WriteFile(outFile, []byte(slide.NotesAsMD()), 0755)
+		err = os.WriteFile(outFile, []byte(renderedSlide), 0755)
+		if err != nil {
+			return err
+		}
+		outFile = filepath.Join(outDir, "presenter-"+strconv.Itoa(slideNum)+".html")
+		renderedSlide, err = renderSlide(slide, true)
+		if err != nil {
+			return err
+		}
+		err = os.WriteFile(outFile, []byte(renderedSlide), 0755)
 		if err != nil {
 			return err
 		}
@@ -68,12 +82,37 @@ func generateSlides(outDir string, inputMd string) error {
 	return nil
 }
 
+func renderSlide(slide Slide, isPresenter bool) (string, error) {
+	var tplText string
+	if isPresenter {
+		if slide.IsFrontPage {
+			tplText = presenterFrontPageTpl
+		} else {
+			tplText = presenterSlideTpl
+		}
+	} else {
+		if slide.IsFrontPage {
+			tplText = frontpageTpl
+		} else {
+			tplText = slideTpl
+		}
+	}
+	tpl := template.Must(template.New("slide").Parse(tplText))
+	var buff bytes.Buffer
+	err := tpl.Execute(&buff, slide)
+	return buff.String(), err
+}
+
 func copyAssets(srcDir string, targetDir string) error {
 	err := os.MkdirAll(targetDir, 0755)
 	if err != nil {
 		return err
 	}
-	return os.CopyFS(targetDir, os.DirFS(srcDir))
+	err = os.CopyFS(targetDir, os.DirFS(srcDir))
+	if err != nil {
+		return err
+	}
+	return os.CopyFS(targetDir, templateFs)
 }
 
 func renderHTML(mergedLines string) string {
@@ -114,16 +153,18 @@ func split(md io.Reader) ([]Slide, error) {
 				slides = append(slides, slide)
 			}
 			onSlide = true
+			normalizedTitle := strings.ReplaceAll(string(curLine), "#", "")
 			slide = Slide{
 				IsFrontPage: true,
-				Title:       string(curLine),
+				Title:       string(normalizedTitle),
 			}
 		case h2.Match(curLine):
 			slides = append(slides, slide)
 			onSlide = true
+			normalizedTitle := strings.ReplaceAll(string(curLine), "#", "")
 			slide = Slide{
 				IsFrontPage: false,
-				Title:       string(curLine),
+				Title:       string(normalizedTitle),
 			}
 		case startNotes.Match(curLine):
 			if inNotesSection {
@@ -147,3 +188,206 @@ func split(md io.Reader) ([]Slide, error) {
 	slides = append(slides, slide)
 	return slides, nil
 }
+
+const slideTpl = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Presentation</title>
+
+  <link rel="stylesheet" href="assets/static/highlight-light.min.css">
+  <script src="assets/static/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+  <script src="assets/static/htmx.min.js"></script>
+  <link rel="stylesheet" href="assets/static/water.min.css">
+</head>
+<body>
+<div
+        hx-get="/next"
+        hx-target="#main"
+        hx-trigger="keydown from:body"
+        hx-on::keydown="if(event.key === 'ArrowRight') this.dispatchEvent(new Event('htmx:trigger'))">
+  <!-- Content -->
+</div>
+<div
+        hx-get="/prev"
+        hx-target="#main"
+        hx-trigger="keydown from:body"
+        hx-on::keydown="if(event.key === 'ArrowLeft') this.dispatchEvent(new Event('htmx:trigger'))">
+  <!-- Content -->
+</div>
+
+<h1>{{ .Title }}</h1>
+
+<main>
+  {{ .ContentAsHtml }}
+</main>
+
+</body>
+</html>
+`
+
+const presenterSlideTpl = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Presentation</title>
+
+  <link rel="stylesheet" href="assets/static/highlight-light.min.css">
+  <script src="assets/static/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+  <script src="assets/static/htmx.min.js"></script>
+  <link rel="stylesheet" href="assets/static/water.min.css">
+</head>
+<body>
+<div
+        hx-get="/next"
+        hx-target="#main"
+        hx-trigger="keydown from:body"
+        hx-on::keydown="if(event.key === 'ArrowRight') this.dispatchEvent(new Event('htmx:trigger'))">
+  <!-- Content -->
+</div>
+<div
+        hx-get="/prev"
+        hx-target="#main"
+        hx-trigger="keydown from:body"
+        hx-on::keydown="if(event.key === 'ArrowLeft') this.dispatchEvent(new Event('htmx:trigger'))">
+  <!-- Content -->
+</div>
+
+<h1>{{ .Title }}</h1>
+
+<main>
+  {{ .ContentAsHtml }}
+</main>
+
+</body>
+<style>
+  #footer {
+    display: flex;
+    margin-top: auto;
+    bottom:30px;
+    position: absolute;
+  }
+</style>
+
+<div id="footer">
+{{ .NotesAsHtml }}
+</div>
+</html>
+`
+
+const frontpageTpl = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ .Title }}</title>
+
+  <link rel="stylesheet" href="assets/static/highlight-light.min.css">
+  <script src="assets/static/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+  <script src="assets/static/htmx.min.js"></script>
+  <link rel="stylesheet" href="assets/static/water.min.css">
+
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div
+        hx-get="/next"
+        hx-target="#main"
+        hx-trigger="keydown from:body"
+        hx-on::keydown="if(event.key === 'ArrowRight') this.dispatchEvent(new Event('htmx:trigger'))">
+  <!-- Content -->
+</div>
+<div
+        hx-get="/prev"
+        hx-target="#main"
+        hx-trigger="keydown from:body"
+        hx-on::keydown="if(event.key === 'ArrowLeft') this.dispatchEvent(new Event('htmx:trigger'))">
+  <!-- Content -->
+</div>
+
+<header>
+  <h1>{{ .Title }}</h1>
+  <h2>{{ .ContentAsHtml }}</h2>
+</header>
+
+</body>
+</html>
+`
+
+const presenterFrontPageTpl = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ .Title }}</title>
+
+  <link rel="stylesheet" href="assets/static/highlight-light.min.css">
+  <script src="assets/static/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+  <script src="assets/static/htmx.min.js"></script>
+  <link rel="stylesheet" href="assets/static/water.min.css">
+
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div
+        hx-get="/next"
+        hx-target="#main"
+        hx-trigger="keydown from:body"
+        hx-on::keydown="if(event.key === 'ArrowRight') this.dispatchEvent(new Event('htmx:trigger'))">
+  <!-- Content -->
+</div>
+<div
+        hx-get="/prev"
+        hx-target="#main"
+        hx-trigger="keydown from:body"
+        hx-on::keydown="if(event.key === 'ArrowLeft') this.dispatchEvent(new Event('htmx:trigger'))">
+  <!-- Content -->
+</div>
+
+<header>
+  <h1>{{ .Title }}</h1>
+  <h2>{{ .ContentAsHtml }}</h2>
+</header>
+
+</body>
+<style>
+  #footer {
+    display: flex;
+    margin-top: auto;
+    bottom:30px;
+    position: absolute;
+  }
+</style>
+
+<div id="footer">
+{{ .NotesAsHtml }}
+</div>
+
+</html>
+`
