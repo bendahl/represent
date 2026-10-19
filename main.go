@@ -39,11 +39,25 @@ func main() {
 	case "render":
 		handleRenderCmd(args[1:])
 	case "present":
-		panic("ERROR: Not implemented")
+		handlePresent(args[1:])
 	case "version":
 		printVersion()
 	default:
 		panic("ERROR: Not implemented - This should be unreachable")
+	}
+}
+
+func handlePresent(args []string) {
+	fl := flag.NewFlagSet("present", flag.ExitOnError)
+	var inputMd string
+	fl.StringVar(&inputMd, "in", "slides.md", "input markdown filename")
+	err := fl.Parse(args)
+	if err != nil {
+		log.Fatalln("Failed to process program arguments.")
+	}
+	err = startServer(inputMd)
+	if err != nil {
+		log.Fatalf("Error running server: %v\n", err)
 	}
 }
 

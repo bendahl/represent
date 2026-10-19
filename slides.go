@@ -18,7 +18,7 @@ import (
 	"github.com/gomarkdown/markdown/parser"
 )
 
-//go:embed static/*
+//go:embed libs/*
 var templateFs embed.FS
 
 type Slide struct {
@@ -79,6 +79,10 @@ func generateSlides(outDir string, inputMd string) error {
 	if err != nil {
 		return fmt.Errorf("failed to copy assets: %v", err)
 	}
+	err = copyLibs(outDir)
+	if err != nil {
+		return fmt.Errorf("failed to copy libs: %v", err)
+	}
 	return nil
 }
 
@@ -108,10 +112,10 @@ func copyAssets(srcDir string, targetDir string) error {
 	if err != nil {
 		return err
 	}
-	err = os.CopyFS(targetDir, os.DirFS(srcDir))
-	if err != nil {
-		return err
-	}
+	return os.CopyFS(targetDir, os.DirFS(srcDir))
+}
+
+func copyLibs(targetDir string) error {
 	return os.CopyFS(targetDir, templateFs)
 }
 
@@ -197,11 +201,11 @@ const slideTpl = `
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Presentation</title>
 
-  <link rel="stylesheet" href="assets/static/highlight-light.min.css">
-  <script src="assets/static/highlight.min.js"></script>
+  <link rel="stylesheet" href="libs/highlight-light.min.css">
+  <script src="libs/highlight.min.js"></script>
   <script>hljs.highlightAll();</script>
-  <script src="assets/static/htmx.min.js"></script>
-  <link rel="stylesheet" href="assets/static/water.min.css">
+  <script src="libs/htmx.min.js"></script>
+  <link rel="stylesheet" href="libs/slide.css">
 </head>
 <body>
 <div
@@ -237,11 +241,11 @@ const presenterSlideTpl = `
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Presentation</title>
 
-  <link rel="stylesheet" href="assets/static/highlight-light.min.css">
-  <script src="assets/static/highlight.min.js"></script>
+  <link rel="stylesheet" href="libs/highlight-light.min.css">
+  <script src="libs/highlight.min.js"></script>
   <script>hljs.highlightAll();</script>
-  <script src="assets/static/htmx.min.js"></script>
-  <link rel="stylesheet" href="assets/static/water.min.css">
+  <script src="libs/htmx.min.js"></script>
+  <link rel="stylesheet" href="libs/slide.css">
 </head>
 <body>
 <div
@@ -265,19 +269,11 @@ const presenterSlideTpl = `
   {{ .ContentAsHtml }}
 </main>
 
-</body>
-<style>
-  #footer {
-    display: flex;
-    margin-top: auto;
-    bottom:30px;
-    position: absolute;
-  }
-</style>
-
 <div id="footer">
 {{ .NotesAsHtml }}
 </div>
+</body>
+
 </html>
 `
 
@@ -289,23 +285,14 @@ const frontpageTpl = `
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ .Title }}</title>
 
-  <link rel="stylesheet" href="assets/static/highlight-light.min.css">
-  <script src="assets/static/highlight.min.js"></script>
+  <link rel="stylesheet" href="libs/highlight-light.min.css">
+  <script src="libs/highlight.min.js"></script>
   <script>hljs.highlightAll();</script>
-  <script src="assets/static/htmx.min.js"></script>
-  <link rel="stylesheet" href="assets/static/water.min.css">
+  <script src="libs/htmx.min.js"></script>
+  <link rel="stylesheet" href="libs/slide.css">
 
-  <style>
-    body {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      text-align: center;
-    }
-  </style>
 </head>
-<body>
+<body class="title-slide">
 <div
         hx-get="/next"
         hx-target="#main"
@@ -322,8 +309,13 @@ const frontpageTpl = `
 </div>
 
 <header>
-  <h1>{{ .Title }}</h1>
-  <h2>{{ .ContentAsHtml }}</h2>
+    <div class="title-accent"></div>
+
+    <h1>{{ .Title }}</h1>
+
+    <h2>
+      <p>{{ .ContentAsHtml }}</p>
+    </h2>
 </header>
 
 </body>
@@ -338,23 +330,14 @@ const presenterFrontPageTpl = `
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ .Title }}</title>
 
-  <link rel="stylesheet" href="assets/static/highlight-light.min.css">
-  <script src="assets/static/highlight.min.js"></script>
+  <link rel="stylesheet" href="libs/highlight-light.min.css">
+  <script src="libs/highlight.min.js"></script>
   <script>hljs.highlightAll();</script>
-  <script src="assets/static/htmx.min.js"></script>
-  <link rel="stylesheet" href="assets/static/water.min.css">
+  <script src="libs/htmx.min.js"></script>
+  <link rel="stylesheet" href="libs/slide.css">
 
-  <style>
-    body {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      text-align: center;
-    }
-  </style>
 </head>
-<body>
+<body class="title-slide">
 <div
         hx-get="/next"
         hx-target="#main"
@@ -371,23 +354,20 @@ const presenterFrontPageTpl = `
 </div>
 
 <header>
-  <h1>{{ .Title }}</h1>
-  <h2>{{ .ContentAsHtml }}</h2>
-</header>
+    <div class="title-accent"></div>
 
-</body>
-<style>
-  #footer {
-    display: flex;
-    margin-top: auto;
-    bottom:30px;
-    position: absolute;
-  }
-</style>
+    <h1>{{ .Title }}</h1>
+
+    <h2>
+      <p>{{ .ContentAsHtml }}</p>
+    </h2>
+</header>
 
 <div id="footer">
 {{ .NotesAsHtml }}
 </div>
+</body>
+
 
 </html>
 `
