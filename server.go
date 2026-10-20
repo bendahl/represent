@@ -42,17 +42,24 @@ func slidesHandlerProducer(slides []Slide) func(w http.ResponseWriter, r *http.R
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 		qParams := r.URL.Query()
-		isPresenter, err := strconv.ParseBool(qParams["presenter"][0])
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = fmt.Fprint(w, "Invalid presenter query parameter (not a boolean)")
-			return
+		var err error
+		isPresenter := false
+		if qParams.Has("presenter") {
+			isPresenter, err = strconv.ParseBool(qParams.Get("presenter"))
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				_, _ = fmt.Fprint(w, "Invalid presenter query parameter (not a boolean)")
+				return
+			}
 		}
-		slideNum, err := strconv.Atoi(qParams["slide"][0])
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = fmt.Fprint(w, "Invalid slide number query parameter")
-			return
+		slideNum := 1
+		if qParams.Has("slide") {
+			slideNum, err = strconv.Atoi(qParams["slide"][0])
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				_, _ = fmt.Fprint(w, "Invalid slide number query parameter")
+				return
+			}
 		}
 		slideNum = max(1, slideNum)
 		if r.Header.Get("HX-Request") == "true" {
