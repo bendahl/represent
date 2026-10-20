@@ -81,16 +81,35 @@ type RenderParams struct {
 	IsPresenter  bool
 	CurrentSlide int
 	TotalSlides  int
+	NextSlide    int
+	PrevSlide    int
 	Slide        Slide
 }
 
-func renderSlide(slide Slide, isPresenter bool, currentSlide int, totalSlides int) (string, error) {
+func toRenderParams(slide Slide, isPresenter bool, currentSlide int, totalSlides int) RenderParams {
 	renderParams := RenderParams{
 		IsPresenter:  isPresenter,
 		CurrentSlide: currentSlide,
 		TotalSlides:  totalSlides,
 		Slide:        slide,
 	}
+	if currentSlide < 2 {
+		renderParams.PrevSlide = 1
+	} else {
+		renderParams.PrevSlide = currentSlide - 1
+	}
+
+	if currentSlide >= totalSlides {
+		renderParams.NextSlide = totalSlides
+	} else {
+		renderParams.NextSlide = currentSlide + 1
+	}
+
+	return renderParams
+}
+
+func renderSlide(slide Slide, isPresenter bool, currentSlide int, totalSlides int) (string, error) {
+	renderParams := toRenderParams(slide, isPresenter, currentSlide, totalSlides)
 	var tplText string
 	if slide.IsFrontPage {
 		tplText = frontPageTpl
@@ -204,6 +223,43 @@ const slideTpl = `
   <link rel="stylesheet" href="libs/slide.css">
 </head>
 <body>
+<div
+  id="next-slide"
+  hx-get="/slides?presenter={{ .IsPresenter }}&slide={{ .NextSlide }}"
+  hx-trigger="nextSlide"
+  hx-swap="none">
+</div>
+
+<div
+  id="prev-slide"
+  hx-get="/slides?presenter={{ .IsPresenter }}&slide={{ .PrevSlide }}"
+  hx-trigger="prevSlide"
+  hx-swap="none">
+</div>
+<script>
+  document.addEventListener('keydown', function(event) {
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+      return;
+    }
+
+    if (event.key.toLowerCase() === 'p') {
+      const footer = document.getElementById('footer');
+
+      if (footer) {
+        footer.toggleAttribute('hidden');
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      htmx.trigger('#next-slide', 'nextSlide');
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      htmx.trigger('#prev-slide', 'prevSlide');
+    }
+  });
+</script>
 
 <h1>{{ .Slide.Title }}</h1>
 
@@ -221,14 +277,6 @@ const slideTpl = `
 <div id="page-number">
   {{ .CurrentSlide }}/{{ .TotalSlides }}
 </div>
-<script>
-  document.addEventListener('keydown', function(event) {
-    if (event.key.toLowerCase() === 'p') {
-      const footer = document.getElementById('footer');
-      footer.toggleAttribute('hidden');
-    }
-  });
-</script>
 </body>
 
 </html>
@@ -250,6 +298,44 @@ const frontPageTpl = `
 
 </head>
 <body class="title-slide">
+<div
+  id="next-slide"
+  hx-get="/slides?presenter={{ .IsPresenter }}&slide={{ .NextSlide }}"
+  hx-trigger="nextSlide"
+  hx-swap="none">
+</div>
+
+<div
+  id="prev-slide"
+  hx-get="/slides?presenter={{ .IsPresenter }}&slide={{ .PrevSlide }}"
+  hx-trigger="prevSlide"
+  hx-swap="none">
+</div>
+
+<script>
+  document.addEventListener('keydown', function(event) {
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+      return;
+    }
+
+    if (event.key.toLowerCase() === 'p') {
+      const footer = document.getElementById('footer');
+
+      if (footer) {
+        footer.toggleAttribute('hidden');
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      htmx.trigger('#next-slide', 'nextSlide');
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      htmx.trigger('#prev-slide', 'prevSlide');
+    }
+  });
+</script>
 
 <header>
     <div class="title-accent"></div>
@@ -271,14 +357,6 @@ const frontPageTpl = `
 <div id="page-number">
   {{ .CurrentSlide }}/{{ .TotalSlides }}
 </div>
-<script>
-  document.addEventListener('keydown', function(event) {
-    if (event.key.toLowerCase() === 'p') {
-      const footer = document.getElementById('footer');
-      footer.toggleAttribute('hidden');
-    }
-  });
-</script>
 
 </body>
 

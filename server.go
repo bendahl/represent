@@ -31,8 +31,6 @@ func startServer(inputMd string) error {
 	http.Handle("/libs/", http.StripPrefix("/libs/", http.FileServer(http.FS(libs))))
 	http.Handle("/assets/", http.FileServer(http.Dir(filepath.Dir(inputMd))))
 	http.HandleFunc("/slides", slidesHandlerProducer(slides))
-	http.HandleFunc("/next", slidesHandlerProducer(slides))
-	http.HandleFunc("/prev", slidesHandlerProducer(slides))
 
 	listenAddr := "localhost:8080"
 	fmt.Printf("server listening on %s\n", listenAddr)
@@ -56,7 +54,17 @@ func slidesHandlerProducer(slides []Slide) func(w http.ResponseWriter, r *http.R
 			_, _ = fmt.Fprint(w, "Invalid slide number query parameter")
 			return
 		}
-
+		slideNum = max(1, slideNum)
+		if r.Header.Get("HX-Request") == "true" {
+			target := fmt.Sprintf(
+				"/slides?presenter=%t&slide=%d",
+				isPresenter,
+				slideNum,
+			)
+			w.Header().Set("HX-Redirect", target)
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 		slide, err := renderSlide(slides[slideNum-1], isPresenter, slideNum, len(slides))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
