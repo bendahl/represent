@@ -33,7 +33,7 @@ func startServer(inputMd string) error {
 	http.HandleFunc("/slides", slidesHandlerProducer(slides))
 
 	listenAddr := "localhost:8080"
-	fmt.Println("server listening on %s", listenAddr)
+	fmt.Printf("server listening on %s\n", listenAddr)
 
 	return http.ListenAndServe(listenAddr, nil)
 }
@@ -42,7 +42,7 @@ func slidesHandlerProducer(slides []Slide) func(w http.ResponseWriter, r *http.R
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 		qParams := r.URL.Query()
-		renderPresenter, err := strconv.ParseBool(qParams["presenter"][0])
+		isPresenter, err := strconv.ParseBool(qParams["presenter"][0])
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = fmt.Fprint(w, "Invalid presenter query parameter (not a boolean)")
@@ -56,7 +56,7 @@ func slidesHandlerProducer(slides []Slide) func(w http.ResponseWriter, r *http.R
 			return
 		}
 
-		slide, err := renderSlide(slides[slideNum], renderPresenter)
+		slide, err := renderSlide(slides[slideNum], isPresenter)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			// Write body after setting header

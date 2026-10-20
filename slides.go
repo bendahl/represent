@@ -63,15 +63,6 @@ func generateSlides(outDir string, inputMd string) error {
 		if err != nil {
 			return err
 		}
-		outFile = filepath.Join(outDir, "presenter-"+strconv.Itoa(slideNum)+".html")
-		renderedSlide, err = renderSlide(slide, true)
-		if err != nil {
-			return err
-		}
-		err = os.WriteFile(outFile, []byte(renderedSlide), 0755)
-		if err != nil {
-			return err
-		}
 	}
 	srcDir := filepath.Join(filepath.Dir(inputMd), "assets")
 	targetDir := filepath.Join(outDir, "assets")
@@ -86,24 +77,25 @@ func generateSlides(outDir string, inputMd string) error {
 	return nil
 }
 
+type RenderParams struct {
+	IsPresenter bool
+	Slide       Slide
+}
+
 func renderSlide(slide Slide, isPresenter bool) (string, error) {
+	renderParams := RenderParams{
+		IsPresenter: isPresenter,
+		Slide:       slide,
+	}
 	var tplText string
-	if isPresenter {
-		if slide.IsFrontPage {
-			tplText = presenterFrontPageTpl
-		} else {
-			tplText = presenterSlideTpl
-		}
+	if slide.IsFrontPage {
+		tplText = frontPageTpl
 	} else {
-		if slide.IsFrontPage {
-			tplText = frontpageTpl
-		} else {
-			tplText = slideTpl
-		}
+		tplText = slideTpl
 	}
 	tpl := template.Must(template.New("slide").Parse(tplText))
 	var buff bytes.Buffer
-	err := tpl.Execute(&buff, slide)
+	err := tpl.Execute(&buff, renderParams)
 	return buff.String(), err
 }
 
@@ -160,7 +152,7 @@ func split(md io.Reader) ([]Slide, error) {
 			normalizedTitle := strings.ReplaceAll(string(curLine), "#", "")
 			slide = Slide{
 				IsFrontPage: true,
-				Title:       string(normalizedTitle),
+				Title:       normalizedTitle,
 			}
 		case h2.Match(curLine):
 			slides = append(slides, slide)
@@ -168,7 +160,7 @@ func split(md io.Reader) ([]Slide, error) {
 			normalizedTitle := strings.ReplaceAll(string(curLine), "#", "")
 			slide = Slide{
 				IsFrontPage: false,
-				Title:       string(normalizedTitle),
+				Title:       normalizedTitle,
 			}
 		case startNotes.Match(curLine):
 			if inNotesSection {
@@ -208,82 +200,40 @@ const slideTpl = `
   <link rel="stylesheet" href="libs/slide.css">
 </head>
 <body>
-<div
-        hx-get="/next"
-        hx-target="#main"
-        hx-trigger="keydown from:body"
-        hx-on::keydown="if(event.key === 'ArrowRight') this.dispatchEvent(new Event('htmx:trigger'))">
-  <!-- Content -->
-</div>
-<div
-        hx-get="/prev"
-        hx-target="#main"
-        hx-trigger="keydown from:body"
-        hx-on::keydown="if(event.key === 'ArrowLeft') this.dispatchEvent(new Event('htmx:trigger'))">
-  <!-- Content -->
-</div>
 
-<h1>{{ .Title }}</h1>
+<h1>{{ .Slide.Title }}</h1>
 
 <main>
-  {{ .ContentAsHtml }}
+  {{ .Slide.ContentAsHtml }}
 </main>
 
-</body>
-</html>
-`
-
-const presenterSlideTpl = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Presentation</title>
-
-  <link rel="stylesheet" href="libs/highlight-light.min.css">
-  <script src="libs/highlight.min.js"></script>
-  <script>hljs.highlightAll();</script>
-  <script src="libs/htmx.min.js"></script>
-  <link rel="stylesheet" href="libs/slide.css">
-</head>
-<body>
-<div
-        hx-get="/next"
-        hx-target="#main"
-        hx-trigger="keydown from:body"
-        hx-on::keydown="if(event.key === 'ArrowRight') this.dispatchEvent(new Event('htmx:trigger'))">
-  <!-- Content -->
-</div>
-<div
-        hx-get="/prev"
-        hx-target="#main"
-        hx-trigger="keydown from:body"
-        hx-on::keydown="if(event.key === 'ArrowLeft') this.dispatchEvent(new Event('htmx:trigger'))">
-  <!-- Content -->
-</div>
-
-<h1>{{ .Title }}</h1>
-
-<main>
-  {{ .ContentAsHtml }}
-</main>
-
+{{ if .IsPresenter }}
 <div id="footer">
-{{ .NotesAsHtml }}
+{{ else }}
+<div id="footer" hidden>
+{{ end }}
+  {{ .Slide.NotesAsHtml }}
 </div>
+<script>
+  document.addEventListener('keydown', function(event) {
+    if (event.key.toLowerCase() === 'p') {
+      const footer = document.getElementById('footer');
+      footer.toggleAttribute('hidden');
+    }
+  });
+</script>
 </body>
 
 </html>
 `
 
-const frontpageTpl = `
+const frontPageTpl = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ .Title }}</title>
+  <title>{{ .Slide.Title }}</title>
 
   <link rel="stylesheet" href="libs/highlight-light.min.css">
   <script src="libs/highlight.min.js"></script>
@@ -293,79 +243,33 @@ const frontpageTpl = `
 
 </head>
 <body class="title-slide">
-<div
-        hx-get="/next"
-        hx-target="#main"
-        hx-trigger="keydown from:body"
-        hx-on::keydown="if(event.key === 'ArrowRight') this.dispatchEvent(new Event('htmx:trigger'))">
-  <!-- Content -->
-</div>
-<div
-        hx-get="/prev"
-        hx-target="#main"
-        hx-trigger="keydown from:body"
-        hx-on::keydown="if(event.key === 'ArrowLeft') this.dispatchEvent(new Event('htmx:trigger'))">
-  <!-- Content -->
-</div>
 
 <header>
     <div class="title-accent"></div>
 
-    <h1>{{ .Title }}</h1>
+    <h1>{{ .Slide.Title }}</h1>
 
     <h2>
-      <p>{{ .ContentAsHtml }}</p>
+      <p>{{ .Slide.ContentAsHtml }}</p>
     </h2>
 </header>
 
-</body>
-</html>
-`
-
-const presenterFrontPageTpl = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ .Title }}</title>
-
-  <link rel="stylesheet" href="libs/highlight-light.min.css">
-  <script src="libs/highlight.min.js"></script>
-  <script>hljs.highlightAll();</script>
-  <script src="libs/htmx.min.js"></script>
-  <link rel="stylesheet" href="libs/slide.css">
-
-</head>
-<body class="title-slide">
-<div
-        hx-get="/next"
-        hx-target="#main"
-        hx-trigger="keydown from:body"
-        hx-on::keydown="if(event.key === 'ArrowRight') this.dispatchEvent(new Event('htmx:trigger'))">
-  <!-- Content -->
-</div>
-<div
-        hx-get="/prev"
-        hx-target="#main"
-        hx-trigger="keydown from:body"
-        hx-on::keydown="if(event.key === 'ArrowLeft') this.dispatchEvent(new Event('htmx:trigger'))">
-  <!-- Content -->
-</div>
-
-<header>
-    <div class="title-accent"></div>
-
-    <h1>{{ .Title }}</h1>
-
-    <h2>
-      <p>{{ .ContentAsHtml }}</p>
-    </h2>
-</header>
-
+{{ if .IsPresenter }}
 <div id="footer">
-{{ .NotesAsHtml }}
+{{ else }}
+<div id="footer" hidden>
+{{ end }}
+  {{ .Slide.NotesAsHtml }}
 </div>
+<script>
+  document.addEventListener('keydown', function(event) {
+    if (event.key.toLowerCase() === 'p') {
+      const footer = document.getElementById('footer');
+      footer.toggleAttribute('hidden');
+    }
+  });
+</script>
+
 </body>
 
 
