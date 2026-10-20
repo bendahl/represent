@@ -55,7 +55,7 @@ func generateSlides(outDir string, inputMd string) error {
 	for idx, slide := range slides {
 		slideNum := idx + 1
 		outFile := filepath.Join(outDir, "content-"+strconv.Itoa(slideNum)+".html")
-		renderedSlide, err := renderSlide(slide, false)
+		renderedSlide, err := renderSlide(slide, false, slideNum, len(slides))
 		if err != nil {
 			return err
 		}
@@ -78,14 +78,18 @@ func generateSlides(outDir string, inputMd string) error {
 }
 
 type RenderParams struct {
-	IsPresenter bool
-	Slide       Slide
+	IsPresenter  bool
+	CurrentSlide int
+	TotalSlides  int
+	Slide        Slide
 }
 
-func renderSlide(slide Slide, isPresenter bool) (string, error) {
+func renderSlide(slide Slide, isPresenter bool, currentSlide int, totalSlides int) (string, error) {
 	renderParams := RenderParams{
-		IsPresenter: isPresenter,
-		Slide:       slide,
+		IsPresenter:  isPresenter,
+		CurrentSlide: currentSlide,
+		TotalSlides:  totalSlides,
+		Slide:        slide,
 	}
 	var tplText string
 	if slide.IsFrontPage {
@@ -214,6 +218,9 @@ const slideTpl = `
 {{ end }}
   {{ .Slide.NotesAsHtml }}
 </div>
+<div id="page-number">
+  {{ .CurrentSlide }}/{{ .TotalSlides }}
+</div>
 <script>
   document.addEventListener('keydown', function(event) {
     if (event.key.toLowerCase() === 'p') {
@@ -260,6 +267,9 @@ const frontPageTpl = `
 <div id="footer" hidden>
 {{ end }}
   {{ .Slide.NotesAsHtml }}
+</div>
+<div id="page-number">
+  {{ .CurrentSlide }}/{{ .TotalSlides }}
 </div>
 <script>
   document.addEventListener('keydown', function(event) {

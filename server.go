@@ -31,6 +31,8 @@ func startServer(inputMd string) error {
 	http.Handle("/libs/", http.StripPrefix("/libs/", http.FileServer(http.FS(libs))))
 	http.Handle("/assets/", http.FileServer(http.Dir(filepath.Dir(inputMd))))
 	http.HandleFunc("/slides", slidesHandlerProducer(slides))
+	http.HandleFunc("/next", slidesHandlerProducer(slides))
+	http.HandleFunc("/prev", slidesHandlerProducer(slides))
 
 	listenAddr := "localhost:8080"
 	fmt.Printf("server listening on %s\n", listenAddr)
@@ -48,7 +50,6 @@ func slidesHandlerProducer(slides []Slide) func(w http.ResponseWriter, r *http.R
 			_, _ = fmt.Fprint(w, "Invalid presenter query parameter (not a boolean)")
 			return
 		}
-
 		slideNum, err := strconv.Atoi(qParams["slide"][0])
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -56,7 +57,7 @@ func slidesHandlerProducer(slides []Slide) func(w http.ResponseWriter, r *http.R
 			return
 		}
 
-		slide, err := renderSlide(slides[slideNum], isPresenter)
+		slide, err := renderSlide(slides[slideNum-1], isPresenter, slideNum, len(slides))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			// Write body after setting header
