@@ -133,9 +133,6 @@ func copyLibs(targetDir string) error {
 
 func renderHTML(mergedLines string) string {
 	extensions := parser.CommonExtensions |
-		parser.Tables |
-		parser.FencedCode |
-		parser.Strikethrough |
 		parser.AutoHeadingIDs
 
 	p := parser.NewWithExtensions(extensions)
