@@ -26,7 +26,8 @@ func startServer(inputMd string) error {
 	}
 	http.Handle("/libs/", http.StripPrefix("/libs/", http.FileServer(http.FS(libs))))
 	http.Handle("/assets/", http.FileServer(http.Dir(filepath.Dir(inputMd))))
-	http.HandleFunc("/slides", slidesHandlerProducer(slides))
+	http.HandleFunc("/slides", slidesHandlerProducer(slides, false))
+	http.HandleFunc("/presenter", slidesHandlerProducer(slides, true))
 
 	listenAddr := "localhost:8080"
 	fmt.Printf("server listening on %s\n", listenAddr)
@@ -34,20 +35,11 @@ func startServer(inputMd string) error {
 	return http.ListenAndServe(listenAddr, nil)
 }
 
-func slidesHandlerProducer(slides []Slide) func(w http.ResponseWriter, r *http.Request) {
+func slidesHandlerProducer(slides []Slide, isPresenter bool) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 		qParams := r.URL.Query()
 		var err error
-		isPresenter := false
-		if qParams.Has("presenter") {
-			isPresenter, err = strconv.ParseBool(qParams.Get("presenter"))
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				_, _ = fmt.Fprint(w, "Invalid presenter query parameter (not a boolean)")
-				return
-			}
-		}
 		slideNum := 1
 		if qParams.Has("slide") {
 			slideNum, err = strconv.Atoi(qParams["slide"][0])
@@ -60,8 +52,7 @@ func slidesHandlerProducer(slides []Slide) func(w http.ResponseWriter, r *http.R
 		slideNum = max(1, slideNum)
 		if r.Header.Get("HX-Request") == "true" {
 			target := fmt.Sprintf(
-				"/slides?presenter=%t&slide=%d",
-				isPresenter,
+				"/presenter?slide=%d",
 				slideNum,
 			)
 			w.Header().Set("HX-Redirect", target)

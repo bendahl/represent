@@ -26,14 +26,14 @@
 {{ if .IsPresenter }}
 <div
         id="next-slide"
-        hx-get="/slides?presenter={{ .IsPresenter }}&slide={{ .NextSlide }}"
+        hx-get="/presenter?slide={{ .NextSlide }}"
         hx-trigger="nextSlide"
         hx-swap="none">
 </div>
 
 <div
         id="prev-slide"
-        hx-get="/slides?presenter={{ .IsPresenter }}&slide={{ .PrevSlide }}"
+        hx-get="/presenter?slide={{ .PrevSlide }}"
         hx-trigger="prevSlide"
         hx-swap="none">
 </div>
