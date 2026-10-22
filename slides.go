@@ -21,6 +21,9 @@ import (
 //go:embed libs/*
 var templateFs embed.FS
 
+//go:embed slide.html
+var slideHtml []byte
+
 type Slide struct {
 	IsFrontPage bool
 	Title       string
@@ -110,13 +113,7 @@ func toRenderParams(slide Slide, isPresenter bool, currentSlide int, totalSlides
 
 func renderSlide(slide Slide, isPresenter bool, currentSlide int, totalSlides int) (string, error) {
 	renderParams := toRenderParams(slide, isPresenter, currentSlide, totalSlides)
-	var tplText string
-	if slide.IsFrontPage {
-		tplText = frontPageTpl
-	} else {
-		tplText = slideTpl
-	}
-	tpl := template.Must(template.New("slide").Parse(tplText))
+	tpl := template.Must(template.New("slide").Parse(string(slideHtml)))
 	var buff bytes.Buffer
 	err := tpl.Execute(&buff, renderParams)
 	return buff.String(), err
@@ -207,127 +204,3 @@ func split(md io.Reader) ([]Slide, error) {
 	slides = append(slides, slide)
 	return slides, nil
 }
-
-const slideTpl = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Presentation</title>
-
-  <link rel="stylesheet" href="libs/highlight-light.min.css">
-  <script src="libs/highlight.min.js"></script>
-  <script>hljs.highlightAll();</script>
-  <script src="libs/htmx.min.js"></script>
-{{ if .IsPresenter }}
-  <script src="libs/presenter.js"></script>
-{{ else }}
-  <script src="libs/htmx-ext-sse.js"></script>
-  <script src="libs/viewer.js"></script>
-{{ end }}
-  
-  <link rel="stylesheet" href="libs/slide.css">
-</head>
-<body>
-{{ if .IsPresenter }}
-<div
-  id="next-slide"
-  hx-get="/slides?presenter={{ .IsPresenter }}&slide={{ .NextSlide }}"
-  hx-trigger="nextSlide"
-  hx-swap="none">
-</div>
-
-<div
-  id="prev-slide"
-  hx-get="/slides?presenter={{ .IsPresenter }}&slide={{ .PrevSlide }}"
-  hx-trigger="prevSlide"
-  hx-swap="none">
-</div>
-{{ end }}
-
-<h1>{{ .Slide.Title }}</h1>
-
-<main>
-  {{ .Slide.ContentAsHtml }}
-</main>
-
-{{ if .IsPresenter }}
-<div id="footer">
-{{ else }}
-<div id="footer" hidden>
-{{ end }}
-  {{ .Slide.NotesAsHtml }}
-</div>
-<div id="page-number">
-  {{ .CurrentSlide }}/{{ .TotalSlides }}
-</div>
-</body>
-
-</html>
-`
-
-const frontPageTpl = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ .Slide.Title }}</title>
-
-  <link rel="stylesheet" href="libs/highlight-light.min.css">
-  <script src="libs/highlight.min.js"></script>
-  <script>hljs.highlightAll();</script>
-  <script src="libs/htmx.min.js"></script>
-{{ if .IsPresenter }}
-  <script src="libs/presenter.js"></script>
-{{ else }}
-  <script src="libs/htmx-ext-sse.js"></script>
-  <script src="libs/viewer.js"></script>
-{{ end }}
-  <link rel="stylesheet" href="libs/slide.css">
-
-</head>
-<body class="title-slide">
-{{ if .IsPresenter }}
-<div
-  id="next-slide"
-  hx-get="/slides?presenter={{ .IsPresenter }}&slide={{ .NextSlide }}"
-  hx-trigger="nextSlide"
-  hx-swap="none">
-</div>
-
-<div
-  id="prev-slide"
-  hx-get="/slides?presenter={{ .IsPresenter }}&slide={{ .PrevSlide }}"
-  hx-trigger="prevSlide"
-  hx-swap="none">
-</div>
-{{ end }}
-
-<header>
-    <div class="title-accent"></div>
-
-    <h1>{{ .Slide.Title }}</h1>
-
-    <h2>
-      <p>{{ .Slide.ContentAsHtml }}</p>
-    </h2>
-</header>
-
-{{ if .IsPresenter }}
-<div id="footer">
-{{ else }}
-<div id="footer" hidden>
-{{ end }}
-  {{ .Slide.NotesAsHtml }}
-</div>
-<div id="page-number">
-  {{ .CurrentSlide }}/{{ .TotalSlides }}
-</div>
-
-</body>
-
-
-</html>
-`
