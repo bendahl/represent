@@ -10,10 +10,6 @@ import (
 	"strconv"
 )
 
-type presentationServer struct {
-	slides []Slide
-}
-
 func startServer(inputMd string) error {
 	inFile, err := os.Open(inputMd)
 	if err != nil {

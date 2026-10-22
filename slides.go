@@ -220,9 +220,17 @@ const slideTpl = `
   <script src="libs/highlight.min.js"></script>
   <script>hljs.highlightAll();</script>
   <script src="libs/htmx.min.js"></script>
+{{ if .IsPresenter }}
+  <script src="libs/presenter.js"></script>
+{{ else }}
+  <script src="libs/htmx-ext-sse.js"></script>
+  <script src="libs/viewer.js"></script>
+{{ end }}
+  
   <link rel="stylesheet" href="libs/slide.css">
 </head>
 <body>
+{{ if .IsPresenter }}
 <div
   id="next-slide"
   hx-get="/slides?presenter={{ .IsPresenter }}&slide={{ .NextSlide }}"
@@ -236,30 +244,7 @@ const slideTpl = `
   hx-trigger="prevSlide"
   hx-swap="none">
 </div>
-<script>
-  document.addEventListener('keydown', function(event) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
-      return;
-    }
-
-    if (event.key.toLowerCase() === 'p') {
-      const footer = document.getElementById('footer');
-
-      if (footer) {
-        footer.toggleAttribute('hidden');
-      }
-      return;
-    }
-
-    if (event.key === 'ArrowRight') {
-      event.preventDefault();
-      htmx.trigger('#next-slide', 'nextSlide');
-    } else if (event.key === 'ArrowLeft') {
-      event.preventDefault();
-      htmx.trigger('#prev-slide', 'prevSlide');
-    }
-  });
-</script>
+{{ end }}
 
 <h1>{{ .Slide.Title }}</h1>
 
@@ -294,10 +279,17 @@ const frontPageTpl = `
   <script src="libs/highlight.min.js"></script>
   <script>hljs.highlightAll();</script>
   <script src="libs/htmx.min.js"></script>
+{{ if .IsPresenter }}
+  <script src="libs/presenter.js"></script>
+{{ else }}
+  <script src="libs/htmx-ext-sse.js"></script>
+  <script src="libs/viewer.js"></script>
+{{ end }}
   <link rel="stylesheet" href="libs/slide.css">
 
 </head>
 <body class="title-slide">
+{{ if .IsPresenter }}
 <div
   id="next-slide"
   hx-get="/slides?presenter={{ .IsPresenter }}&slide={{ .NextSlide }}"
@@ -311,31 +303,7 @@ const frontPageTpl = `
   hx-trigger="prevSlide"
   hx-swap="none">
 </div>
-
-<script>
-  document.addEventListener('keydown', function(event) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
-      return;
-    }
-
-    if (event.key.toLowerCase() === 'p') {
-      const footer = document.getElementById('footer');
-
-      if (footer) {
-        footer.toggleAttribute('hidden');
-      }
-      return;
-    }
-
-    if (event.key === 'ArrowRight') {
-      event.preventDefault();
-      htmx.trigger('#next-slide', 'nextSlide');
-    } else if (event.key === 'ArrowLeft') {
-      event.preventDefault();
-      htmx.trigger('#prev-slide', 'prevSlide');
-    }
-  });
-</script>
+{{ end }}
 
 <header>
     <div class="title-accent"></div>
