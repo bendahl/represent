@@ -7,7 +7,21 @@
 
     <link rel="stylesheet" href="libs/highlight-light.min.css">
     <script src="libs/highlight.min.js"></script>
-    <script>hljs.highlightAll();</script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            if (window.hljs) {
+                hljs.highlightAll();
+            }
+        });
+
+        document.addEventListener("htmx:afterSettle", () => {
+            if (!window.hljs) return;
+
+            document.querySelectorAll("pre code:not(.hljs)").forEach((block) => {
+                hljs.highlightElement(block);
+            });
+        });
+    </script>
     <script src="libs/htmx.min.js"></script>
     {{ if .IsPresenter }}
     <script src="libs/presenter.js"></script>
@@ -18,55 +32,51 @@
 
     <link rel="stylesheet" href="libs/slide.css">
 </head>
-{{ if .Slide.IsFrontPage }}
-<body class="title-slide">
-{{ else }}
 <body>
-{{ end }}
 {{ if .IsPresenter }}
-<div
-        id="next-slide"
-        hx-get="/presenter?slide={{ .NextSlide }}"
-        hx-trigger="nextSlide"
-        hx-swap="none">
-</div>
+<div id="next-slide"
+     hx-get="/next"
+     hx-trigger="nextSlide"
+     hx-swap="none"></div>
 
-<div
-        id="prev-slide"
-        hx-get="/presenter?slide={{ .PrevSlide }}"
-        hx-trigger="prevSlide"
-        hx-swap="none">
-</div>
+<div id="prev-slide"
+     hx-get="/prev"
+     hx-trigger="prevSlide"
+     hx-swap="none"></div>
 {{ end }}
 
+<div id="slide"
+     class="{{ if .Slide.IsFrontPage }}title-slide{{ end }}"
+     hx-swap-oob="outerHTML">
 
-{{ if .Slide.IsFrontPage }}
-<header>
-    <div class="title-accent"></div>
+    {{ if .Slide.IsFrontPage }}
+    <header>
+        <div class="title-accent"></div>
+        <h1>{{ .Slide.Title }}</h1>
+        <div class="slide-subtitle">
+            {{ .Slide.ContentAsHtml }}
+        </div>
+    </header>
+    {{ else }}
     <h1>{{ .Slide.Title }}</h1>
-    <h2>
-        <p>{{ .Slide.ContentAsHtml }}</p>
-    </h2>
-</header>
-
-{{ else }}
-<h1>{{ .Slide.Title }}</h1>
-<main>
-    {{ .Slide.ContentAsHtml }}
-</main>
-{{ end }}
-
+    <main>
+        {{ .Slide.ContentAsHtml }}
+    </main>
+    {{ end }}
+</div>
 
 {{ if .IsPresenter }}
-<div id="footer">
+<div id="footer" hx-swap-oob="true">
+    {{ .Slide.NotesAsHtml }}
+</div>
 {{ else }}
-    <div id="footer" hidden>
+<div id="footer" hidden hx-swap-oob="true">
+    {{ .Slide.NotesAsHtml }}
+</div>
 {{ end }}
-        {{ .Slide.NotesAsHtml }}
-    </div>
-    <div id="page-number">
-        {{ .CurrentSlide }}/{{ .TotalSlides }}
-    </div>
-</body>
 
+<div id="page-number" hx-swap-oob="true">
+    {{ .CurrentSlide }}/{{ .TotalSlides }}
+</div>
+</body>
 </html>

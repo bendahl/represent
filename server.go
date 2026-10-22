@@ -7,7 +7,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
+	"strings"
+	"sync"
 )
 
 func startServer(inputMd string) error {
@@ -24,10 +25,14 @@ func startServer(inputMd string) error {
 	if err != nil {
 		return err
 	}
+	slideNum := 1
+	var m sync.Mutex
 	http.Handle("/libs/", http.StripPrefix("/libs/", http.FileServer(http.FS(libs))))
 	http.Handle("/assets/", http.FileServer(http.Dir(filepath.Dir(inputMd))))
-	http.HandleFunc("/slides", slidesHandlerProducer(slides, false))
-	http.HandleFunc("/presenter", slidesHandlerProducer(slides, true))
+	http.HandleFunc("/slides", slidesHandlerProducer(slides, false, &slideNum, &m))
+	http.HandleFunc("/presenter", slidesHandlerProducer(slides, true, &slideNum, &m))
+	http.HandleFunc("/next", slidesHandlerProducer(slides, true, &slideNum, &m))
+	http.HandleFunc("/prev", slidesHandlerProducer(slides, true, &slideNum, &m))
 
 	listenAddr := "localhost:8080"
 	fmt.Printf("server listening on %s\n", listenAddr)
@@ -35,32 +40,21 @@ func startServer(inputMd string) error {
 	return http.ListenAndServe(listenAddr, nil)
 }
 
-func slidesHandlerProducer(slides []Slide, isPresenter bool) func(w http.ResponseWriter, r *http.Request) {
+func slidesHandlerProducer(slides []Slide, isPresenter bool, slideNum *int, m *sync.Mutex) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
-		qParams := r.URL.Query()
-		var err error
-		slideNum := 1
-		if qParams.Has("slide") {
-			slideNum, err = strconv.Atoi(qParams["slide"][0])
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				_, _ = fmt.Fprint(w, "Invalid slide number query parameter")
-				return
-			}
+		m.Lock()
+		defer m.Unlock()
+		switch true {
+		case strings.HasPrefix(r.URL.Path, "/next"):
+			*slideNum += 1
+		case strings.HasPrefix(r.URL.Path, "/prev"):
+			*slideNum -= 1
 		}
-		slideNum = max(1, slideNum)
-		if r.Header.Get("HX-Request") == "true" {
-			target := fmt.Sprintf(
-				"/presenter?slide=%d",
-				slideNum,
-			)
-			w.Header().Set("HX-Redirect", target)
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		slide, err := renderSlide(slides[slideNum-1], isPresenter, slideNum, len(slides))
+		*slideNum = min(max(1, *slideNum), len(slides))
+		slide, err := renderSlide(slides[*slideNum-1], isPresenter, *slideNum, len(slides))
 		if err != nil {
+			w.Write([]byte(slide))
 			w.WriteHeader(http.StatusInternalServerError)
 			// Write body after setting header
 			_, _ = fmt.Fprint(w, "Failed to render slide")
