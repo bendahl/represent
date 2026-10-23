@@ -4,10 +4,15 @@ The workflow is simple:
 
 * Write your slides as a single Markdown file.
 * Start the presentation server, pointing it at your Markdown.
-* Open up a browser window and point it at [the slides endpoint](http://localhost:8080/slides).
+* Open up a browser window and point it at [the presenter endpoint](http://localhost:8080/presenter).
+* Open up a second browser window at [the slides endpoint](http://localhost:8080/slides)
 * Done!
 
-**Note that using presenter and the regular view in sync in two different browser windows still needs to be implemented.** 
+**IMPORTANT:** 
+- You can navigate back and forth between slides using the left and right arrow keys.
+- Navigation only works in the presenter view.
+- The slides view is kept in sync automatically via SSE (server sent events).
+- Notes are only shown in the presenter view and can be toggled via the p-key (p stands for "presenter notes"). 
 
 ### Markdown Creation
 The most important thing to keep in mind when creating the slides is that they all go in one single .md-file.
