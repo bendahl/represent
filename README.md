@@ -3,19 +3,16 @@ This is a simple standalone tool to quickly create a presentation based on Markd
 The workflow is simple:
 
 * Write your slides as a single Markdown file.
-* Generate slides to a separate folder.
-* Start the presentation mode.
-* Open up a browser window and point it at [the slides endpoint](http://localhost:8080/slides).
-* _Optional:_ Open up a second browser window (preferably on a different screen) to show the presenter notes 
-and point it at [the presenter endpoint](http://localhost:8080/present).
-* To move back and forth through the slides, simply use the right and left arrow keys on your keyboard.
-  * **Note: Moving between slides is synced between endpoints, so pressing the arrow keys on either view (slides or presenter) works.**
+* Start the presentation server, pointing it at your Markdown.
+* Open up a browser window and point it at [the presenter endpoint](http://localhost:8080/presenter).
+* Open up a second browser window at [the slides endpoint](http://localhost:8080/slides)
+* Done!
 
-## Usage
-As mentioned above, there are different phases when creating a presentation:
-1. Markdown creation 
-2. Slide generation
-3. Presenting
+**IMPORTANT:** 
+- You can navigate back and forth between slides using the left and right arrow keys.
+- Navigation only works in the presenter view.
+- The slides view is kept in sync automatically via SSE (server sent events).
+- Notes are only shown in the presenter view and can be toggled via the p-key (p stands for "presenter notes"). 
 
 ### Markdown Creation
 The most important thing to keep in mind when creating the slides is that they all go in one single .md-file.
@@ -27,29 +24,30 @@ Besides this, here are some things to note:
 * Tables are supported
 * Code blocks are supported (including syntax highlighting)
 * Light and dark mode are supported (see [slide generation](#slide-generation) for details)
+* Assets, like images, should be copied to a separate folder in the working directory. The folder needs to be called `assets`.
 * Presenter notes are supported
-  * Use `:start-notes` and `:end-notes` markers to mark a block of presenter notes
+  * Use `:notes-start` and `:notes-end` markers to mark a block of presenter notes
   * Presenter notes can make use of the same formatting as any regular slide
 
-For more details see the `test.md` file in this repository. It contains examples for the above-mentioned features and is used for basic testing.
-
-### Slide Generation
-To generate the slides, simply use the follwing command:
-
-> represent -theme [light|dark] -out [slide-folder] markdown.md
-
-**Note that -theme and -out are optional parameters. Dark is used as the default theme. If no output directory name 
-is chosen, `slides/` will be assumed as the target directory. The directory will be created if it does not exist.**
+For more details see the `example/example.md` file in this repository. It contains examples for the above-mentioned features and is used for basic testing.
 
 ### Presentation
 To present, simply run the below command:
 
-> represent -present ./slide-folder
+> represent -present -in ./example/example.md
 
 The slides will be published on the endpoint http://localhost:8080/slides.
-The presenter view will be published on the endpoint http://localhost:8080/present.
 Use right and left arrow keys to navigate between slides.
-You can use the arrow keys on the presenter view as well as on the slides.
+Toggle notes via the "p" key (p stands for presenter, like in "presenter mode").
+
+### Slide Rendering
+To render slides to HTML files, simply use the following command:
+
+> ./represent render -in ./example/example.md -out example/slides
+
+**Note that this is an optional step. You can render to slides to HTML if you like, but for a presentation this is not required.
+At this point, the same templates are used for on-the-fly presenting as well as local rendering. 
+This may change in the future to optimize the output for different purposes.**
 
 ## Development Status and AI Assistance
 This project was developed iteratively with assistance from ChatGPT and other AI-assisted coding techniques. 

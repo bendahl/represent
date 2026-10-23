@@ -4,6 +4,11 @@ A simple subtitle for the presentation.
 
 This is a second subtitle sentence.
 
+:notes-start
+- Don't forget to give a short introduction
+- Another thing that should be mentioned
+:notes-end
+
 ## Introduction
 
 Welcome to the presentation.
@@ -37,6 +42,10 @@ func main() {
 * Only uses std-lib
 * Can be compiled to **fully self-contained** binary
 :notes-end
+
+## Picture Example
+
+![logo](./assets/tnt_logo.png)
 
 ## Conclusion
 
