@@ -32,17 +32,25 @@
 
     <link rel="stylesheet" href="libs/slide.css">
 </head>
-<body>
 {{ if .IsPresenter }}
+<body>
 <div id="next-slide"
      hx-get="/next"
      hx-trigger="nextSlide"
-     hx-swap="none"></div>
-
+     hx-swap="none">
+</div>
 <div id="prev-slide"
      hx-get="/prev"
      hx-trigger="prevSlide"
-     hx-swap="none"></div>
+     hx-swap="none">
+</div>
+{{ else }}
+<body hx-ext="sse" sse-connect="/events">
+    <div id="refresh-slide"
+        hx-get="/slides"
+        hx-trigger="sse:slideChanged"
+        hx-swap="none">
+    </div>
 {{ end }}
 
 <div id="slide"
