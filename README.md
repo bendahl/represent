@@ -14,7 +14,8 @@ The workflow is simple:
 - The slides view is kept in sync automatically via SSE (server sent events).
 - Notes are only shown in the presenter view and can be toggled via the p-key (p stands for "presenter notes"). 
 
-### Markdown Creation
+
+### Markdown Creation - Preparing the Presentation
 The most important thing to keep in mind when creating the slides is that they all go in one single .md-file.
 Besides this, here are some things to note:
 
@@ -31,14 +32,18 @@ Besides this, here are some things to note:
 
 For more details see the `example/example.md` file in this repository. It contains examples for the above-mentioned features and is used for basic testing.
 
-### Presentation
-To present, simply run the below command:
+### Presenting
+The presentation can be started by the following command:
 
-> represent -present -in ./example/example.md
+> ./represent present -in <path/to/md/file> -host <hostname|IP> -port <portnumber>
 
-The slides will be published on the endpoint http://localhost:8080/slides.
-Use right and left arrow keys to navigate between slides.
-Toggle notes via the "p" key (p stands for presenter, like in "presenter mode").
+**Note that hostname and portname are optional parameters.**
+
+#### Standard Endpoints
+The default endpoints for side and presenter view are as follows:
+
+- Presenter View: http://127.0.0.1:8080/presenter
+- Slide View: http://127.0.0.1:8080/slides
 
 ### Slide Rendering
 To render slides to HTML files, simply use the following command:

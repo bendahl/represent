@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-func startServer(inputMd string) error {
+func startServer(inputMd string, host string, port int) error {
 	inFile, err := os.Open(inputMd)
 	if err != nil {
 		return err
@@ -34,7 +34,7 @@ func startServer(inputMd string) error {
 	http.HandleFunc("/next", nextHandler(slides, &slideNum, len(slides), &m, bc))
 	http.HandleFunc("/prev", prevHandler(slides, &slideNum, len(slides), &m, bc))
 	http.HandleFunc("/events", sseHanlder(bc))
-	listenAddr := "localhost:8080"
+	listenAddr := fmt.Sprintf("%s:%d", host, port)
 	fmt.Printf("server listening on %s\n", listenAddr)
 	fmt.Printf("presenter view available at: http://%s/presenter\n", listenAddr)
 	fmt.Printf("slides view available at: http://%s/slides\n", listenAddr)

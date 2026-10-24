@@ -51,11 +51,15 @@ func handlePresent(args []string) {
 	fl := flag.NewFlagSet("present", flag.ExitOnError)
 	var inputMd string
 	fl.StringVar(&inputMd, "in", "slides.md", "input markdown filename")
+	var host string
+	fl.StringVar(&host, "host", "localhost", "hostname to listen on")
+	var port int
+	fl.IntVar(&port, "port", 8080, "port to listen on")
 	err := fl.Parse(args)
 	if err != nil {
 		log.Fatalln("Failed to process program arguments.")
 	}
-	err = startServer(inputMd)
+	err = startServer(inputMd, host, port)
 	if err != nil {
 		log.Fatalf("Error running server: %v\n", err)
 	}
