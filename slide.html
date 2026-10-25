@@ -7,21 +7,7 @@
 
     <link rel="stylesheet" href="{{ .HljsTheme }}">
     <script src="libs/highlight.min.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            if (window.hljs) {
-                hljs.highlightAll();
-            }
-        });
-
-        document.addEventListener("htmx:afterSettle", () => {
-            if (!window.hljs) return;
-
-            document.querySelectorAll("pre code:not(.hljs)").forEach((block) => {
-                hljs.highlightElement(block);
-            });
-        });
-    </script>
+    <script src="libs/hljs-init.js"></script>
     <script src="libs/htmx.min.js"></script>
     {{ if .IsPresenter }}
     <script src="libs/presenter.js"></script>
