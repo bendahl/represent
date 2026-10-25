@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 var version string
@@ -51,6 +52,10 @@ func handlePresent(args []string) {
 	fl := flag.NewFlagSet("present", flag.ExitOnError)
 	var inputMd string
 	fl.StringVar(&inputMd, "in", "slides.md", "input markdown filename")
+	var theme string
+	fl.StringVar(&theme, "theme", "default-light", "slide theme css - this can also point to a user-provided css file")
+	var hljsTheme string
+	fl.StringVar(&hljsTheme, "hl-theme", "default-light", "highlight-js theme css - this can also point to a user-provided css file")
 	var host string
 	fl.StringVar(&host, "host", "localhost", "hostname to listen on")
 	var port int
@@ -59,7 +64,15 @@ func handlePresent(args []string) {
 	if err != nil {
 		log.Fatalln("Failed to process program arguments.")
 	}
-	err = startServer(inputMd, host, port)
+	relThemePath, err := resolveTheme(theme, false, inputMd)
+	if err != nil {
+		log.Fatalf("Failed to resolve given theme (css file): %v", err)
+	}
+	relHljsThemePath, err := resolveTheme(hljsTheme, true, inputMd)
+	if err != nil {
+		log.Fatalf("Failed to resolve given HighlighJS theme (css file): %v", err)
+	}
+	err = startServer(inputMd, host, port, relThemePath, relHljsThemePath)
 	if err != nil {
 		log.Fatalf("Error running server: %v\n", err)
 	}
@@ -71,14 +84,50 @@ func handleRenderCmd(args []string) {
 	fl.StringVar(&outDir, "out", "slides", "output directory name")
 	var inputMd string
 	fl.StringVar(&inputMd, "in", "slides.md", "input markdown filename")
+	var theme string
+	fl.StringVar(&theme, "theme", "default-light", "slide theme css")
+	var hljsTheme string
+	fl.StringVar(&hljsTheme, "hl-theme", "default-light", "highlight-js theme css")
 	err := fl.Parse(args)
 	if err != nil {
 		log.Fatalln("Failed to process program arguments.")
 	}
-	err = generateSlides(outDir, inputMd)
+	relThemePath, err := resolveTheme(theme, false, inputMd)
+	if err != nil {
+		log.Fatalf("Failed to resolve given theme (css file): %v", err)
+	}
+	relHljsThemePath, err := resolveTheme(hljsTheme, true, inputMd)
+	if err != nil {
+		log.Fatalf("Failed to resolve given HighlighJS theme (css file): %v", err)
+	}
+	err = generateSlides(outDir, inputMd, relThemePath, relHljsThemePath)
 	if err != nil {
 		log.Fatalf("Failed to generate slides: %v\n", err)
 	}
+}
+
+func resolveTheme(theme string, isHljsTheme bool, inputMd string) (string, error) {
+	if isHljsTheme {
+		switch theme {
+		case "default", "light", "default-light":
+			return "libs/default-hljs-light.css", nil
+		case "dark", "default-dark":
+			return "libs/default-hljs-dark.css", nil
+		}
+	} else {
+		switch theme {
+		case "default", "default-light":
+			return "libs/default-light.css", nil
+		case "dark", "default-dark":
+			return "libs/default-dark.css", nil
+		}
+	}
+	targetDir := filepath.Dir(inputMd)
+	assetPath := filepath.Join(targetDir, "assets", theme)
+	if _, err := os.Stat(assetPath); err == nil {
+		return filepath.Join("assets", theme), nil
+	}
+	return "", fmt.Errorf("failed to resolve theme %s; not in %s", theme, assetPath)
 }
 
 func isValidCommand(cmd string) bool {

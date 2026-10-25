@@ -14,6 +14,12 @@ The workflow is simple:
 - The slides view is kept in sync automatically via SSE (server sent events).
 - Notes are only shown in the presenter view and can be toggled via the p-key (p stands for "presenter notes"). 
 
+### Features
+- Create on-the-fly presentations from your Markdown files
+- Separate presenter mode and viewer mode (synced via SSE)
+- Switch between light and dark themes
+- Use custom themes (via custom css)
+- Render slides to HTML files
 
 ### Markdown Creation - Preparing the Presentation
 The most important thing to keep in mind when creating the slides is that they all go in one single .md-file.
@@ -26,6 +32,8 @@ Besides this, here are some things to note:
 * Code blocks are supported (including syntax highlighting)
 * Light and dark mode are supported (see [slide generation](#slide-generation) for details)
 * Assets, like images, should be copied to a separate folder in the working directory. The folder needs to be called `assets`.
+  * **If you would like to customize the stylesheets for syntax highlighting or the slides, your custom css goes into the asset folder as well.
+      Note that you only need to pass the filename of your css files as a program parameter, however.**
 * Presenter notes are supported
   * Use `:notes-start` and `:notes-end` markers to mark a block of presenter notes
   * Presenter notes can make use of the same formatting as any regular slide
@@ -45,6 +53,31 @@ The default endpoints for side and presenter view are as follows:
 - Presenter View: http://127.0.0.1:8080/presenter
 - Slide View: http://127.0.0.1:8080/slides
 
+### Theming
+The default theme is a light theme along with a Github-light inspired HighlightJS theme for syntax highlighting. 
+A default dark mode is included. the following two calls show how to switch between them explicitly:
+
+**Use Default Dark Mode:**
+> ./represent present -in example/example.md -theme dark -hl-theme dark
+
+**Use Default Light Mode:**
+> ./represent present -in example/example.md -theme light -hl-theme light
+
+**Mix Default Dark and Light Mode:**
+> ./represent present -in example/example.md -theme dark -hl-theme light
+
+In addition, you may pass your own custom css. The structure should match the structure of the example css-files found in `example/assets`.
+The file `purebasic-hljs.css` is a regular HighlightJS style. 
+Any HighlightJS style can be applied for syntax highlighting.
+The `purebasic.css` file shows the structure of the css-file applied to the slides.
+Make sure to preserve this structure when creating custom themes.
+Below is an example call of the program passing custom css-files.
+**Note that your css-files go into the assets-folder, as shown in the example.**
+
+**Using custom css:**
+> ./represent present -in example/example.md -theme purebasic.css -hl-theme purebasic-hljs.css
+
+
 ### Slide Rendering
 To render slides to HTML files, simply use the following command:
 
@@ -55,22 +88,11 @@ At this point, the same templates are used for on-the-fly presenting as well as 
 This may change in the future to optimize the output for different purposes.**
 
 ## Development Status and AI Assistance
-This project was developed iteratively with assistance from ChatGPT and other AI-assisted coding techniques. 
-The implementation reflects an evolving design, and the code may contain inconsistencies, technical debt, 
-or areas that would benefit from further refactoring.
-
-The project is provided as-is, primarily for learning, experimentation, and community use. Testing, 
-documentation, and code quality improvements may be undertaken over time, 
-but no particular maintenance schedule or future improvements are guaranteed.
-
-## Disclaimer
-This software is provided "AS IS", without warranties or guarantees of any kind, to the extent permitted 
-by applicable law. Use it at your own risk. The author does not guarantee that the software is error-free, 
-secure, fit for a particular purpose, or suitable for production use.
-
-Users are responsible for reviewing, testing, and validating the software before using it, particularly in environments involving sensitive data, credentials, or critical systems.
-
-Nothing in this disclaimer excludes or limits liability to the extent such exclusion or limitation is prohibited by applicable law.
+This project started as a little experiment to see how quickly a simple Markdown presentation tool could be created using AI assistance.
+The result was a mostly functional but hard to maintain first version.
+A full rewrite followed.
+The current version has all basic features that were initially envisioned and is much easier to maintain.
+Further improvements to the code structure and more tests will be added as time permits.
 
 ## Contributing
 At this point in time I'm not accepting any pull requests. Neither will I accept any feature nor change requests.

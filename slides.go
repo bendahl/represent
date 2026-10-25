@@ -41,7 +41,7 @@ func (s Slide) NotesAsHtml() string {
 	return renderHTML(mergedLines)
 }
 
-func generateSlides(outDir string, inputMd string) error {
+func generateSlides(outDir string, inputMd string, theme string, hljsTheme string) error {
 	err := os.MkdirAll(outDir, 0755)
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ func generateSlides(outDir string, inputMd string) error {
 	for idx, slide := range slides {
 		slideNum := idx + 1
 		outFile := filepath.Join(outDir, "content-"+strconv.Itoa(slideNum)+".html")
-		renderedSlide, err := renderSlide(slide, false, slideNum, len(slides))
+		renderedSlide, err := renderSlide(slide, false, slideNum, len(slides), theme, hljsTheme)
 		if err != nil {
 			return err
 		}
@@ -87,14 +87,18 @@ type RenderParams struct {
 	NextSlide    int
 	PrevSlide    int
 	Slide        Slide
+	Theme        string
+	HljsTheme    string
 }
 
-func toRenderParams(slide Slide, isPresenter bool, currentSlide int, totalSlides int) RenderParams {
+func toRenderParams(slide Slide, isPresenter bool, currentSlide int, totalSlides int, theme string, hljsTheme string) RenderParams {
 	renderParams := RenderParams{
 		IsPresenter:  isPresenter,
 		CurrentSlide: currentSlide,
 		TotalSlides:  totalSlides,
 		Slide:        slide,
+		Theme:        theme,
+		HljsTheme:    hljsTheme,
 	}
 	if currentSlide < 2 {
 		renderParams.PrevSlide = 1
@@ -111,8 +115,8 @@ func toRenderParams(slide Slide, isPresenter bool, currentSlide int, totalSlides
 	return renderParams
 }
 
-func renderSlide(slide Slide, isPresenter bool, currentSlide int, totalSlides int) (string, error) {
-	renderParams := toRenderParams(slide, isPresenter, currentSlide, totalSlides)
+func renderSlide(slide Slide, isPresenter bool, currentSlide int, totalSlides int, theme string, hljsTheme string) (string, error) {
+	renderParams := toRenderParams(slide, isPresenter, currentSlide, totalSlides, theme, hljsTheme)
 	tpl := template.Must(template.New("slide").Parse(string(slideHtml)))
 	var buff bytes.Buffer
 	err := tpl.Execute(&buff, renderParams)

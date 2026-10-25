@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-func startServer(inputMd string, host string, port int) error {
+func startServer(inputMd string, host string, port int, theme string, hljsTheme string) error {
 	inFile, err := os.Open(inputMd)
 	if err != nil {
 		return err
@@ -29,10 +29,10 @@ func startServer(inputMd string, host string, port int) error {
 	bc := NewBroadcaster()
 	http.Handle("/libs/", http.StripPrefix("/libs/", http.FileServer(http.FS(libs))))
 	http.Handle("/assets/", http.FileServer(http.Dir(filepath.Dir(inputMd))))
-	http.HandleFunc("/slides", slidesHandler(slides, false, &slideNum, &m))
-	http.HandleFunc("/presenter", slidesHandler(slides, true, &slideNum, &m))
-	http.HandleFunc("/next", nextHandler(slides, &slideNum, len(slides), &m, bc))
-	http.HandleFunc("/prev", prevHandler(slides, &slideNum, len(slides), &m, bc))
+	http.HandleFunc("/slides", slidesHandler(slides, false, &slideNum, &m, theme, hljsTheme))
+	http.HandleFunc("/presenter", slidesHandler(slides, true, &slideNum, &m, theme, hljsTheme))
+	http.HandleFunc("/next", nextHandler(slides, &slideNum, len(slides), &m, bc, theme, hljsTheme))
+	http.HandleFunc("/prev", prevHandler(slides, &slideNum, len(slides), &m, bc, theme, hljsTheme))
 	http.HandleFunc("/events", sseHanlder(bc))
 	listenAddr := fmt.Sprintf("%s:%d", host, port)
 	fmt.Printf("server listening on %s\n", listenAddr)
@@ -74,7 +74,7 @@ func sseHanlder(events *Broadcaster) http.HandlerFunc {
 	}
 }
 
-func changeSlide(slides []Slide, slideNum *int, totalSlides int, m *sync.RWMutex, bc *Broadcaster, delta int) http.HandlerFunc {
+func changeSlide(slides []Slide, slideNum *int, totalSlides int, m *sync.RWMutex, bc *Broadcaster, delta int, theme string, hljsTheme string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
@@ -84,28 +84,28 @@ func changeSlide(slides []Slide, slideNum *int, totalSlides int, m *sync.RWMutex
 		current := *slideNum
 		m.Unlock()
 		bc.Publish(current)
-		updateSlide(w, slides, current, true)
+		updateSlide(w, slides, current, true, theme, hljsTheme)
 	}
 }
 
-func nextHandler(slides []Slide, slideNum *int, totalSlides int, m *sync.RWMutex, bc *Broadcaster) http.HandlerFunc {
-	return changeSlide(slides, slideNum, totalSlides, m, bc, 1)
+func nextHandler(slides []Slide, slideNum *int, totalSlides int, m *sync.RWMutex, bc *Broadcaster, theme string, hljsTheme string) http.HandlerFunc {
+	return changeSlide(slides, slideNum, totalSlides, m, bc, 1, theme, hljsTheme)
 }
 
-func prevHandler(slides []Slide, slideNum *int, totalSlides int, m *sync.RWMutex, bc *Broadcaster) http.HandlerFunc {
-	return changeSlide(slides, slideNum, totalSlides, m, bc, -1)
+func prevHandler(slides []Slide, slideNum *int, totalSlides int, m *sync.RWMutex, bc *Broadcaster, theme string, hljsTheme string) http.HandlerFunc {
+	return changeSlide(slides, slideNum, totalSlides, m, bc, -1, theme, hljsTheme)
 }
 
-func slidesHandler(slides []Slide, isPresenter bool, slideNum *int, m *sync.RWMutex) http.HandlerFunc {
+func slidesHandler(slides []Slide, isPresenter bool, slideNum *int, m *sync.RWMutex, theme string, hljsTheme string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		m.RLock()
 		current := *slideNum
 		m.RUnlock()
-		updateSlide(w, slides, current, isPresenter)
+		updateSlide(w, slides, current, isPresenter, theme, hljsTheme)
 	}
 }
-func updateSlide(w http.ResponseWriter, slides []Slide, slideNum int, isPresenter bool) {
-	slide, err := renderSlide(slides[slideNum-1], isPresenter, slideNum, len(slides))
+func updateSlide(w http.ResponseWriter, slides []Slide, slideNum int, isPresenter bool, theme string, hljsTheme string) {
+	slide, err := renderSlide(slides[slideNum-1], isPresenter, slideNum, len(slides), theme, hljsTheme)
 	if err != nil {
 		w.Write([]byte(slide))
 		w.WriteHeader(http.StatusInternalServerError)
