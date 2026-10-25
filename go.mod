@@ -1,4 +1,4 @@
-module represent
+module github.com/bendahl/represent
 
 go 1.27
 
