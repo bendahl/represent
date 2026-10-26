@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"embed"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -67,15 +68,19 @@ func generateSlides(outDir string, inputMd string, theme string, hljsTheme strin
 			return err
 		}
 	}
+	err = copyLibs(outDir)
+	if err != nil {
+		return fmt.Errorf("failed to copy libs: %v", err)
+	}
 	srcDir := filepath.Join(filepath.Dir(inputMd), "assets")
+	if _, err := os.Stat(srcDir); errors.Is(err, os.ErrNotExist) {
+		fmt.Printf("assets dir not found. skipping... (expected path: %s)\n", srcDir)
+		return nil
+	}
 	targetDir := filepath.Join(outDir, "assets")
 	err = copyAssets(srcDir, targetDir)
 	if err != nil {
 		return fmt.Errorf("failed to copy assets: %v", err)
-	}
-	err = copyLibs(outDir)
-	if err != nil {
-		return fmt.Errorf("failed to copy libs: %v", err)
 	}
 	return nil
 }
