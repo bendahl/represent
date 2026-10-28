@@ -49,9 +49,9 @@ jobs:
           mkdir -p "release/${{ matrix.target }}"
 
           if [ "${{ matrix.target }}" = "win" ]; then
-            cp dist/represent.exe "release/${{ matrix.target }}/"
+            cp represent.exe "release/${{ matrix.target }}/"
           else
-            cp dist/represent "release/${{ matrix.target }}/"
+            cp represent "release/${{ matrix.target }}/"
           fi
 
       - name: Package Linux/macOS binary
