@@ -87,6 +87,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
