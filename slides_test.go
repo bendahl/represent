@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"testing"
 )
 
@@ -41,7 +40,6 @@ func TestSplit(t *testing.T) {
 	if len(slides) != numSlidesExpected {
 		t.Fatalf("Expected %d slides. Actual: %d", numSlidesExpected, len(slides))
 	}
-	fmt.Printf("%#v", slides)
 }
 
 func TestRender(t *testing.T) {
@@ -99,5 +97,4 @@ func TestMultiplePresentationMd(t *testing.T) {
 	if len(slides) != numSlidesExpected {
 		t.Fatalf("Expected %d slides. Actual: %d", numSlidesExpected, len(slides))
 	}
-	fmt.Printf("%#v", slides)
 }
