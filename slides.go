@@ -70,7 +70,7 @@ func generateSlides(outDir string, inputMd string, theme string, hljsTheme strin
 	}
 	err = copyLibs(outDir)
 	if err != nil {
-		return fmt.Errorf("failed to copy libs: %v", err)
+		return fmt.Errorf("failed to copy libs: %w", err)
 	}
 	srcDir := filepath.Join(filepath.Dir(inputMd), "assets")
 	if _, err := os.Stat(srcDir); errors.Is(err, os.ErrNotExist) {
@@ -80,7 +80,7 @@ func generateSlides(outDir string, inputMd string, theme string, hljsTheme strin
 	targetDir := filepath.Join(outDir, "assets")
 	err = copyAssets(srcDir, targetDir)
 	if err != nil {
-		return fmt.Errorf("failed to copy assets: %v", err)
+		return fmt.Errorf("failed to copy assets: %w", err)
 	}
 	return nil
 }
