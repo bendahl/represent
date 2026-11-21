@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-21
+
+### Fixed
+- Handle inline codeblocks containing Markdown correctly
+
 ## [0.2.0] - 2026-10-28
 
 ### Added 
