@@ -269,7 +269,7 @@ func split(md io.Reader) ([]Slide, error) {
 
 	err := mdScanner.Err()
 	if err != nil {
-		return slides, err
+		return nil, fmt.Errorf("failed to scan markdown: %w", err)
 	}
 
 	slides = append(slides, slide)
