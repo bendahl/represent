@@ -207,6 +207,11 @@ func split(md io.Reader) ([]Slide, error) {
 			slide.Content = append(slide.Content, string(curLine))
 		}
 	}
+	err := mdScanner.Err()
+	if err != nil {
+		return slides, err
+	}
+
 	slides = append(slides, slide)
 	return slides, nil
 }
