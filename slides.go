@@ -157,8 +157,19 @@ func split(md io.Reader) ([]Slide, error) {
 	h2 := regexp.MustCompile(`^[\s]*##\s.*$`)
 	startNotes := regexp.MustCompile("^:notes-start")
 	endNotes := regexp.MustCompile("^:notes-end")
+
+	// Markdown code fences (``` and ~~~)
+	codeFence := regexp.MustCompile(`^\s*(` + "`" + `{3,}|~{3,})`)
+
+	// HTML code block tags
+	htmlCodeTag := regexp.MustCompile(`(?i)</?(pre|code)\b[^>]*>`)
+
 	mdScanner := bufio.NewScanner(md)
 	inNotesSection := false
+	inCodeBlock := false
+	codeFenceMarker := ""
+	htmlCodeDepth := 0
+
 	// ignore leading blank lines
 	onSlide := false
 	var slide Slide
@@ -168,6 +179,54 @@ func split(md io.Reader) ([]Slide, error) {
 	for mdScanner.Scan() {
 		curLine := mdScanner.Bytes()
 		lineNum += 1
+
+		// Handle Markdown code fences
+		if inCodeBlock && codeFenceMarker != "" {
+			line := strings.TrimSpace(string(curLine))
+			if strings.HasPrefix(line, codeFenceMarker) &&
+				(len(line) == len(codeFenceMarker) ||
+					strings.TrimSpace(line[len(codeFenceMarker):]) == "") {
+				inCodeBlock = false
+				codeFenceMarker = ""
+			}
+			if onSlide {
+				slide.Content = append(slide.Content, string(curLine))
+			}
+			continue
+		}
+
+		if !inCodeBlock {
+			if match := codeFence.FindSubmatch(curLine); match != nil {
+				codeFenceMarker = string(match[1])
+				inCodeBlock = true
+				if onSlide {
+					slide.Content = append(slide.Content, string(curLine))
+				}
+				continue
+			}
+		}
+
+		// Handle HTML code blocks (<pre>, <code>)
+		htmlTags := htmlCodeTag.FindAll(curLine, -1)
+		if inCodeBlock || htmlCodeDepth > 0 || len(htmlTags) > 0 {
+			for _, tag := range htmlTags {
+				if strings.HasPrefix(string(tag), "</") {
+					if htmlCodeDepth > 0 {
+						htmlCodeDepth--
+					}
+				} else if !strings.HasSuffix(string(tag), "/>") {
+					htmlCodeDepth++
+				}
+			}
+
+			inCodeBlock = htmlCodeDepth > 0
+
+			if onSlide {
+				slide.Content = append(slide.Content, string(curLine))
+			}
+			continue
+		}
+
 		switch {
 		case h1.Match(curLine):
 			// handle special case where multiple presentations are combined in one md file
@@ -207,6 +266,7 @@ func split(md io.Reader) ([]Slide, error) {
 			slide.Content = append(slide.Content, string(curLine))
 		}
 	}
+
 	err := mdScanner.Err()
 	if err != nil {
 		return slides, err

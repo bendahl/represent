@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 )
 
@@ -96,5 +97,87 @@ func TestMultiplePresentationMd(t *testing.T) {
 	numSlidesExpected := 4
 	if len(slides) != numSlidesExpected {
 		t.Fatalf("Expected %d slides. Actual: %d", numSlidesExpected, len(slides))
+	}
+}
+
+func TestSplitCodeBlocks(t *testing.T) {
+	tests := []struct {
+		name           string
+		md             string
+		expectedSlides int
+	}{
+		{
+			name: "HTML code block",
+			md: "# Presentation\n\n" +
+				"## First Slide\n\n" +
+				"Some content.\n\n" +
+				"<pre><code>\n" +
+				"# This is not a slide\n" +
+				"## Neither is this\n" +
+				"</code></pre>\n\n" +
+				"## Second Slide\n\n" +
+				"More content.\n",
+			expectedSlides: 3,
+		},
+		{
+			name: "Markdown code block with backticks",
+			md: "# Presentation\n\n" +
+				"## First Slide\n\n" +
+				"Some content.\n\n" +
+				"````markdown\n" +
+				"# This is not a slide\n" +
+				"## Neither is this\n" +
+				"````\n\n" +
+				"## Second Slide\n\n" +
+				"More content.\n",
+			expectedSlides: 3,
+		},
+		{
+			name: "Markdown code block with tildes",
+			md: "# Presentation\n\n" +
+				"## First Slide\n\n" +
+				"Some content.\n\n" +
+				"~~~markdown\n" +
+				"# This is not a slide\n" +
+				"## Neither is this\n" +
+				"~~~\n\n" +
+				"## Second Slide\n\n" +
+				"More content.\n",
+			expectedSlides: 3,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			slides, err := split(strings.NewReader(tt.md))
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if len(slides) != tt.expectedSlides {
+				t.Fatalf(
+					"expected %d slides, got %d",
+					tt.expectedSlides,
+					len(slides),
+				)
+			}
+
+			expectedTitles := []string{
+				" Presentation",
+				" First Slide",
+				" Second Slide",
+			}
+
+			for i, expected := range expectedTitles {
+				if slides[i].Title != expected {
+					t.Errorf(
+						"slide %d: expected title %q, got %q",
+						i,
+						expected,
+						slides[i].Title,
+					)
+				}
+			}
+		})
 	}
 }
