@@ -74,6 +74,8 @@ const multiPrentationMd = `
 This is a subtitle
 
 :notes-start
+#  H1Headers are handled correctly
+## H2 Headers are handled correctly
 - These are presenter notes
 - Another note
 	- Some sub list
@@ -163,9 +165,9 @@ func TestSplitCodeBlocks(t *testing.T) {
 			}
 
 			expectedTitles := []string{
-				" Presentation",
-				" First Slide",
-				" Second Slide",
+				"Presentation",
+				"First Slide",
+				"Second Slide",
 			}
 
 			for i, expected := range expectedTitles {

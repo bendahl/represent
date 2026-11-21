@@ -152,12 +152,14 @@ func renderHTML(mergedLines string) string {
 	return res
 }
 
-func split(md io.Reader) ([]Slide, error) {
-	h1 := regexp.MustCompile(`^[\s]*#\s.*$`)
-	h2 := regexp.MustCompile(`^[\s]*##\s.*$`)
-	startNotes := regexp.MustCompile("^:notes-start")
-	endNotes := regexp.MustCompile("^:notes-end")
+var (
+	h1         = regexp.MustCompile(`^[\s]*#\s.*$`)
+	h2         = regexp.MustCompile(`^[\s]*##\s.*$`)
+	startNotes = regexp.MustCompile("^:notes-start")
+	endNotes   = regexp.MustCompile("^:notes-end")
+)
 
+func split(md io.Reader) ([]Slide, error) {
 	// Markdown code fences (``` and ~~~)
 	codeFence := regexp.MustCompile(`^\s*(` + "`" + `{3,}|~{3,})`)
 
@@ -228,25 +230,6 @@ func split(md io.Reader) ([]Slide, error) {
 		}
 
 		switch {
-		case h1.Match(curLine):
-			// handle special case where multiple presentations are combined in one md file
-			if len(slide.Title) > 0 {
-				slides = append(slides, slide)
-			}
-			onSlide = true
-			normalizedTitle := strings.ReplaceAll(string(curLine), "#", "")
-			slide = Slide{
-				IsFrontPage: true,
-				Title:       normalizedTitle,
-			}
-		case h2.Match(curLine):
-			slides = append(slides, slide)
-			onSlide = true
-			normalizedTitle := strings.ReplaceAll(string(curLine), "#", "")
-			slide = Slide{
-				IsFrontPage: false,
-				Title:       normalizedTitle,
-			}
 		case startNotes.Match(curLine):
 			if inNotesSection {
 				return nil, fmt.Errorf("error on line %d: Nested notes are not allowed", lineNum)
@@ -262,6 +245,25 @@ func split(md io.Reader) ([]Slide, error) {
 		case inNotesSection:
 			slide.Notes = append(slide.Notes, string(curLine))
 			continue
+		case h1.Match(curLine):
+			// handle special case where multiple presentations are combined in one md file
+			if len(slide.Title) > 0 {
+				slides = append(slides, slide)
+			}
+			onSlide = true
+			normalizedTitle := normalizeTitle(string(curLine))
+			slide = Slide{
+				IsFrontPage: true,
+				Title:       normalizedTitle,
+			}
+		case h2.Match(curLine):
+			slides = append(slides, slide)
+			onSlide = true
+			normalizedTitle := normalizeTitle(string(curLine))
+			slide = Slide{
+				IsFrontPage: false,
+				Title:       normalizedTitle,
+			}
 		case onSlide:
 			slide.Content = append(slide.Content, string(curLine))
 		}
@@ -274,4 +276,8 @@ func split(md io.Reader) ([]Slide, error) {
 
 	slides = append(slides, slide)
 	return slides, nil
+}
+
+func normalizeTitle(rawTitle string) string {
+	return strings.TrimSpace(strings.TrimLeft(strings.TrimSpace(rawTitle), "#"))
 }
