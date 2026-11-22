@@ -25,6 +25,7 @@ esac
 
 export GOOS=${OS}
 export GOARCH=${ARCH}
+export CGO_ENABLED=0
 
 echo "Building for ${OS} (${ARCH})..."
 go build -ldflags "-X main.version=$(git describe --abbrev=0 --always) -X main.commit=$(git rev-parse HEAD)"
